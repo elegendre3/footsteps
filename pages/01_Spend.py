@@ -1,6 +1,5 @@
 import streamlit as st
 from streamlit_ace import st_ace
-from utils.utils import create_expander, execute_and_clear
 
 i = 1
 for widget in [

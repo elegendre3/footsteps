@@ -22,3 +22,4 @@ pylint
 plotly
 pr-streamlit-template>=0.2.3
 streamlit-card
+openpyxl
