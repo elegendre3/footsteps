@@ -98,23 +98,42 @@ def homepage_content():
         st.markdown(hide_table_row_index, unsafe_allow_html=True)
         expense_summary = pd.DataFrame(expense_summary, columns=['Type', 'Poids', 'Montant'])
         st.table(expense_summary)
+        spend_df_sum = spend_df.groupby('Type').sum().reset_index()
+        fig = px.pie(spend_df_sum, values='Prix Total', names='Type', title="Cost breakdown")
+        st.plotly_chart(fig, use_container_width=True)
 
-        # st.caption(f"**Montant Total [{int(spend_df['Prix Total'].sum())}] euros**")
+        spend_df.sort_values(by=['date'])
+        type_to_remove = ['Materiel', 'REDUC']
+
+        spends_per_type = spend_df[~spend_df.Type.isin(type_to_remove)].sort_values(by=['date'])
+        fig = px.area(
+            spends_per_type.groupby(['date', 'Type'])['Prix Total'].sum().reset_index(),
+            x='date',
+            y='Prix Total',
+            color='Type',
+            title="Depenses dans le temps"
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        st.caption("En excluant les dépenses 'Materiel'")
+
+        st.caption("Evolution des prix/kg")
+        st.caption("TODO")
 
     def production():
         st.subheader("Production")
         st.markdown(f"**Volume Total:  [{int(production_df['volume'].sum())}] L**")
+        st.caption("Time graph L/week for period of spend")
 
     def sales():
         st.subheader("Sales")
         st.markdown(f"**Montant Total:  [{int(sales_df['Payé'].sum())}] Euros**")
 
     def cost_per_litre():
-        st.subheader("Current Avg Cost per Litre")
+        st.subheader("Current Avg [Cost] per Litre")
         avg_cost_per_litre = round(int(spend_df['Prix Total'].sum())/int(production_df['volume'].sum()), 2)
         st.markdown(f"**{avg_cost_per_litre} Euros/L**")
 
-        cost_per_litre_df = merge_spend_and_production(spend_df, production_df)
+        cost_per_litre_df= merge_spend_and_production(spend_df, production_df)
         fig = px.line(cost_per_litre_df, x=cost_per_litre_df['date'], y=cost_per_litre_df['prix_total_par_litre'])
         # fig.add_shape(
         #     type='line',
@@ -127,6 +146,16 @@ def homepage_content():
         #     yref='y'
         # )
         st.plotly_chart(fig, use_container_width=True)
+
+        st.subheader("Current Avg [Cost - Materiel] per Litre")
+        sub_spend_df = spend_df[~spend_df.Type.isin(['Materiel'])]
+        avg_cost_per_litre = round(int(sub_spend_df['Prix Total'].sum()) / int(production_df['volume'].sum()), 2)
+        st.markdown(f"**{avg_cost_per_litre} Euros/L**")
+
+        cost_moins_materiel_per_litre_df = merge_spend_and_production(sub_spend_df, production_df)
+        fig2 = px.line(cost_moins_materiel_per_litre_df, x='date', y='prix_total_par_litre')
+        fig2.update_traces(line_color='#ca2b3b')
+        st.plotly_chart(fig2, use_container_width=True)
 
     cost_per_litre()
     matieres_premieres()

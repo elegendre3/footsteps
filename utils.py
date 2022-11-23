@@ -1,6 +1,6 @@
 import datetime
 from pathlib import Path
-from typing import List
+from typing import (List, Tuple)
 
 import pandas as pd
 
@@ -54,23 +54,28 @@ def get_sales_df(df_path: Path) -> pd.DataFrame:
 def merge_spend_and_production(
         spend_df: pd.DataFrame,
         production_df: pd.DataFrame,
-        type_filter: List[str] = EXPENSE_TYPES
-) -> pd.DataFrame:
+        type_filter: List[str] = EXPENSE_TYPES,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     filtered_spend_df = _spend_filter(spend_df, type_filter)
-    mergeable_spend_df = filtered_spend_df[['date', 'Prix Total']]
+    mergeable_spend_df = filtered_spend_df[['date', 'Prix Total', 'Type']]
     mergeable_spend_df['volume'] = 0
 
     mergeable_production_df = production_df[['date', 'volume']]
     mergeable_production_df['Prix Total'] = 0
+    mergeable_production_df['Type'] = 'na'
 
     cost_df = mergeable_spend_df.merge(mergeable_production_df, how='outer')
-    cost_df = cost_df.sort_values(by=['date']).groupby('date').sum()
-    cost_df['prix_cum'] = cost_df['Prix Total'].cumsum()
-    cost_df['volume_cum'] = cost_df['volume'].cumsum()
-    cost_df['prix_total_par_litre'] = cost_df['prix_cum']/cost_df['volume_cum']
-    cost_df['prix_total_par_litre'] = cost_df['prix_total_par_litre'].apply(lambda x: round(min(100, x), 1))
-    cost_df['date'] = cost_df.index
-    return cost_df
+
+    cost_per_litre_df = cost_df.sort_values(by=['date']).groupby('date')['Prix Total', 'volume'].sum().reset_index()
+    cost_per_litre_df['prix_cum'] = cost_per_litre_df['Prix Total'].cumsum()
+    cost_per_litre_df['volume_cum'] = cost_per_litre_df['volume'].cumsum()
+    cost_per_litre_df['prix_total_par_litre'] = cost_per_litre_df['prix_cum']/cost_per_litre_df['volume_cum']
+    cost_per_litre_df['prix_total_par_litre'] = cost_per_litre_df['prix_total_par_litre'].apply(lambda x: round(min(100, x), 1))
+    return cost_per_litre_df
+
+
+def cost_per_kg(df:pd.DataFrame) -> pd.DataFrame:
+    pass
 
 
 def excel_date_processor(str_full_date: str) -> datetime.date:
@@ -102,6 +107,4 @@ if __name__ == "__main__":
     spend_df = get_spend_df(SPEND_DF_PATH)
 
     cost_per_litre_df = merge_spend_and_production(spend_df, production_df)
-    import plotly.express as px
-    px.line(cost_per_litre_df, x=cost_per_litre_df['date'], y=cost_per_litre_df['prix_total_par_litre'])
     print()
