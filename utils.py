@@ -44,6 +44,38 @@ def get_production_df(df_path: Path) -> pd.DataFrame:
     return _convert_production_df(in_df)
 
 
+def prod_per_month(production_df: pd.DataFrame) -> pd.DataFrame:
+    def _map_to_first_day_of_month(in_date: datetime.date) -> datetime.date:
+        return datetime.date(year=in_date.year, month=in_date.month, day=1)
+
+    start_date = datetime.date(year=2021, month=11, day=1)
+    end_date_max = _map_to_first_day_of_month(datetime.date.today())
+
+    months_of_prod = [start_date]
+    end_date = start_date
+    while end_date < end_date_max:
+        end_date = _map_to_first_day_of_month(end_date + datetime.timedelta(days=32))
+        months_of_prod.append(end_date)
+
+    empty_df = pd.DataFrame({'date': months_of_prod, 'volume': [0] * len(months_of_prod)})
+
+    production_df['date'] = production_df['date'].apply(_map_to_first_day_of_month)
+    production_df = production_df.groupby('date')['volume'].sum().reset_index()
+
+    merged_df = empty_df.merge(production_df, how='left', on='date').fillna(0)
+    merged_df['volume'] = merged_df['volume_x'] + merged_df['volume_y']
+    merged_df = merged_df.drop(['volume_x', 'volume_y'], axis=1)
+
+    # add avg
+    merged_df['Type'] = ['L/month'] * len(merged_df)
+
+    avg_df = merged_df.copy()
+    avg_df.loc[:, 'Type'] = ['All time average'] * len(avg_df)
+    avg_df.loc[:, 'volume'] = [round(merged_df['volume'].mean(), 1)] * len(avg_df)
+
+    return pd.concat([merged_df, avg_df])
+
+
 def get_sales_df(df_path: Path) -> pd.DataFrame:
     def _convert_sales_df(df: pd.DataFrame) -> pd.DataFrame:
         return df
@@ -126,6 +158,7 @@ def excel_date_processor(str_full_date: str) -> datetime.date:
 if __name__ == "__main__":
     sales_df = get_sales_df(SALES_DF_PATH)
     production_df = get_production_df(PRODUCTION_DF_PATH)
+    prod_per_month_df = prod_per_month(production_df)
     spend_df = get_spend_df(SPEND_DF_PATH)
     cost_per_kg_df = cost_per_kg(spend_df)
 
