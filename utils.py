@@ -74,8 +74,30 @@ def merge_spend_and_production(
     return cost_per_litre_df
 
 
-def cost_per_kg(df:pd.DataFrame) -> pd.DataFrame:
-    pass
+def cost_per_kg(spend_df: pd.DataFrame) -> pd.DataFrame:
+    sub_spend_df = spend_df[spend_df.Type.isin(['Malt', 'Houblons', 'Levures'])]
+
+    def lambda_func(row: pd.Series):
+        if row.loc['Type'] == 'Levures':
+           return row.loc['Quantite'] / 10
+        elif row.loc['Type'] == 'Houblons':
+            return row.loc['Quantite'] * 20
+        else:
+            return row.loc['Quantite']
+
+    sub_spend_df['weight'] = sub_spend_df.apply(lambda_func, axis=1)
+    sub_spend_df.sort_values(by=['Date', 'Type'])
+    sub_spend_df['cost_per_package_weight'] = 0 * len(sub_spend_df)
+    sub_spend_df['weight_cum'] = 0 * len(sub_spend_df)
+    sub_spend_df['cost_cum'] = 0 * len(sub_spend_df)
+    for t in ['Malt', 'Houblons', 'Levures']:
+        type_sub_spend_df = sub_spend_df[sub_spend_df.Type == t]
+        type_sub_spend_df.loc[:, 'weight_cum'] = type_sub_spend_df['weight'].cumsum()
+        type_sub_spend_df.loc[:, 'cost_cum'] = type_sub_spend_df['Prix Total'].cumsum()
+        sub_spend_df.loc[type_sub_spend_df.index, 'cost_per_package_weight'] = type_sub_spend_df['cost_cum']/ type_sub_spend_df['weight_cum']
+
+    # sub_spend_df['cost_per_package_weight'] = sub_spend_df['Prix Total'] / sub_spend_df['weight']
+    return sub_spend_df
 
 
 def excel_date_processor(str_full_date: str) -> datetime.date:
@@ -105,6 +127,8 @@ if __name__ == "__main__":
     sales_df = get_sales_df(SALES_DF_PATH)
     production_df = get_production_df(PRODUCTION_DF_PATH)
     spend_df = get_spend_df(SPEND_DF_PATH)
+    cost_per_kg_df = cost_per_kg(spend_df)
 
     cost_per_litre_df = merge_spend_and_production(spend_df, production_df)
+
     print()

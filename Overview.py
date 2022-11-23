@@ -5,6 +5,7 @@ import plotly.express as px
 import streamlit as st
 
 from utils import (
+    cost_per_kg,
     get_production_df,
     get_sales_df,
     get_spend_df,
@@ -116,8 +117,10 @@ def homepage_content():
         st.plotly_chart(fig, use_container_width=True)
         st.caption("En excluant les dépenses 'Materiel'")
 
-        st.caption("Evolution des prix/kg")
-        st.caption("TODO")
+        cost_per_kg_df = cost_per_kg(spend_df)
+        fig = px.line(cost_per_kg_df, x='Date', y='cost_per_package_weight', color='Type', title="Evolution des prix/poids")
+        st.plotly_chart(fig, use_container_width=True)
+        st.caption("Malt/kg --  Houblons/50g -- Levures/10g")
 
     def production():
         st.subheader("Production")
