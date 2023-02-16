@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import (List, Tuple)
 
 import pandas as pd
-
+import streamlit as st
 
 DATA_FOLDER = Path('data')
 SPEND_DF_PATH = DATA_FOLDER.joinpath('spend.xlsx')
@@ -22,6 +22,7 @@ def spend_filter_and_agg(df: pd.DataFrame, expense_types: List[str], agg_col: st
     return int(_spend_filter(df, expense_types)[agg_col].sum())
 
 
+@st.experimental_memo
 def get_spend_df(df_path: Path) -> pd.DataFrame:
     def _convert_spend_df(in_df: pd.DataFrame) -> pd.DataFrame:
         df = in_df.dropna(how='all')
@@ -34,6 +35,7 @@ def get_spend_df(df_path: Path) -> pd.DataFrame:
     return _convert_spend_df(in_df)
 
 
+@st.experimental_memo
 def get_production_df(df_path: Path) -> pd.DataFrame:
     def _convert_production_df(df: pd.DataFrame) -> pd.DataFrame:
         df.columns = ['date', 'beer_name', 'volume']
@@ -76,6 +78,7 @@ def prod_per_month(production_df: pd.DataFrame) -> pd.DataFrame:
     return pd.concat([merged_df, avg_df])
 
 
+@st.experimental_memo
 def get_sales_df(df_path: Path) -> pd.DataFrame:
     def _convert_sales_df(df: pd.DataFrame) -> pd.DataFrame:
         return df
