@@ -192,6 +192,6 @@ def homepage_content():
 
 
 if __name__ == "__main__":
-    st.set_page_config(layout="wide")
+    st.set_page_config(page_title='FOOTSTEPS', page_icon='data/logo_footsteps_round.png', layout="wide")
     set_session_states()
     homepage_content()
