@@ -123,7 +123,7 @@ def homepage_content():
                 title="Depenses dans le temps"
             )
             st.plotly_chart(fig, use_container_width=True)
-            st.caption("En excluant les dépenses 'Materiel'")
+            st.caption("NB: En excluant les dépenses 'Materiel'")
         plot_spend_over_time()
 
         def plot_cost_per_kg():
