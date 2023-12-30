@@ -80,7 +80,7 @@ def homepage_content():
             expense_summary = []
             for expense_type in [['Malt'], ['Houblons'], ['Levures']]:
                 weight_unit = 'Kg'
-                if expense_type == "Levures":
+                if expense_type[0] == "Levures":
                     weight_unit = 'g'
                 expense_summary.append(
                     [
